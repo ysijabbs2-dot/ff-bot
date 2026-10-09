@@ -49,8 +49,28 @@ async def init_db():
                 value TEXT
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS update_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT,
+                url TEXT
+            )
+        """)
         await db.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('owner', '@lv_oxyg3n')")
         await db.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('admin', '@Ts_hunter')")
+
+        # Default Update Links setup
+        async with db.execute("SELECT COUNT(*) FROM update_links") as cursor:
+            count = (await cursor.fetchone())[0]
+            if count == 0:
+                default_links = [
+                    ("📢 Main Channel", "https://t.me/lv_oxyg3n"),
+                    ("⚡ Second Channel", "https://t.me/lv_oxyg3n"),
+                    ("💳 Payment Proofs", "https://t.me/lv_oxyg3n"),
+                    ("💬 Feedback", "https://t.me/lv_oxyg3n")
+                ]
+                await db.executemany("INSERT INTO update_links (title, url) VALUES (?, ?)", default_links)
+
         await db.commit()
 
 async def get_setting(key: str, default="@lv_oxyg3n"):
@@ -70,64 +90,64 @@ TEXTS = {
         "choose_lang": "👋 Welcome! Please select your preferred language:",
         "contact_req": "🔐 **Security Verification**\n\nSharing your contact is **100% safe & required** for account protection and instant key generation.\n\nPlease tap the button below to share:",
         "btn_share_contact": "📱 Share Phone Number",
-        "verified": "✅ Verification Successful! Welcome to the VIP Portal.",
-        "menu_title": "👑 **PREMIUM PANEL DASHBOARD** 👑\nSelect an option below to proceed:",
+        "verified": "✅ Verification Successful! Welcome to the Portal.",
+        "menu_title": "💎 **OXYGEN STORE DASHBOARD** 💎\nSelect an option below to proceed:",
         "cat_main": "🛡️ Main ID Safe",
         "cat_second": "⚡ Second ID Safe",
         "cat_free": "🎁 Free Panel",
+        "cat_updates": "📢 Get Updates",
         "cat_support": "💬 Support",
         "empty": "⚠️ **Currently Unavailable**\nNo active panels in this section right now.\nPlease contact owner {owner} for urgent access.",
+        "updates_title": "📌 **OFFICIAL CHANNELS & PROOFS**\nJoin our official hubs below for live updates, proofs, and announcements:",
         "support_title": "🎧 **CUSTOMER SUPPORT CENTER**\nNeed assistance or instant key activation? Reach out:",
         "btn_admin": "👨‍💻 Contact Admin",
         "btn_owner": "👑 Contact Owner",
         "btn_buy": "🛒 Buy / Get Key",
         "btn_back": "⬅️ Back",
         "anim_loading": "⚡ [■□□□□] Accessing Cloud Server...",
-        "anim_loading2": "⚡ [■■■□□] Authenticating Session...",
         "anim_loading3": "⚡ [■■■■■] Decrypting Asset...",
-        "anim_vap": "✨ Vaporizing previous state...",
     },
     "hi": {
         "choose_lang": "👋 Namaste! Kripya apni bhasha chunein:",
         "contact_req": "🔐 **Suraksha Satyaapan**\n\nApna contact share karna **100% safe aur zaroori hai** security aur instant setup ke liye.\n\nNeeche diye button par click karke verify karein:",
         "btn_share_contact": "📱 Phone Number Share Karein",
-        "verified": "✅ Satyaapan Safal! VIP Portal me aapka swagat hai.",
-        "menu_title": "👑 **PREMIUM PANEL DASHBOARD** 👑\nKripya ek option chunein:",
+        "verified": "✅ Satyaapan Safal! Portal me aapka swagat hai.",
+        "menu_title": "💎 **OXYGEN STORE DASHBOARD** 💎\nKripya ek option chunein:",
         "cat_main": "🛡️ Main ID Safe",
         "cat_second": "⚡ Second ID Safe",
         "cat_free": "🎁 Free Panel",
+        "cat_updates": "📢 Get Updates",
         "cat_support": "💬 Support",
         "empty": "⚠️ **Abhi Uplabdh Nahi Hai**\nIs section me koi active panel nahi hai.\nTurant help ke liye Owner {owner} se contact karein.",
+        "updates_title": "📌 **OFFICIAL CHANNELS & PROOFS**\nLive updates, proofs aur feedback dekhne ke liye neeche click karein:",
         "support_title": "🎧 **CUSTOMER SUPPORT CENTER**\nKoi sawal ya purchase ke liye sampark karein:",
         "btn_admin": "👨‍💻 Contact Admin",
         "btn_owner": "👑 Contact Owner",
         "btn_buy": "🛒 Buy Karein",
         "btn_back": "⬅️ Wapas Jayein",
         "anim_loading": "⚡ [■□□□□] Cloud Server Se Connect Ho Raha Hai...",
-        "anim_loading2": "⚡ [■■■□□] Session Verify Ho Raha Hai...",
         "anim_loading3": "⚡ [■■■■■] File Prepare Ho Rahi Hai...",
-        "anim_vap": "✨ Interface Refresh Ho Raha Hai...",
     },
     "ru": {
         "choose_lang": "👋 Добро пожаловать! Пожалуйста, выберите язык:",
         "contact_req": "🔐 **Проверка безопасности**\n\nПредоставление контакта **на 100% безопасно и необходимо** для защиты аккаунта.\n\nНажмите кнопку ниже для подтверждения:",
         "btn_share_contact": "📱 Поделиться контактом",
-        "verified": "✅ Проверка прошла успешно! Добро пожаловать в VIP-портал.",
-        "menu_title": "👑 **ГЛАВНАЯ ПАНЕЛЬ VIP** 👑\nВыберите нужный раздел:",
+        "verified": "✅ Проверка прошла успешно! Добро пожаловать в портал.",
+        "menu_title": "💎 **ГЛАВНАЯ ПАНЕЛЬ OXYGEN** 💎\nВыберите нужный раздел:",
         "cat_main": "🛡️ Для Основного ID",
         "cat_second": "⚡ Для Второго ID",
         "cat_free": "🎁 Бесплатная Панель",
+        "cat_updates": "📢 Обновления",
         "cat_support": "💬 Поддержка",
         "empty": "⚠️ **Временно недоступно**\nВ этом разделе пока нет активных товаров.\nСвяжитесь с владельцем {owner}.",
+        "updates_title": "📌 **ОФИЦИАЛЬНЫЕ КАНАЛЫ**\nСледите за новостями и отзывами:",
         "support_title": "🎧 **ЦЕНТР ПОДДЕРЖКИ**\nНужна помощь или покупка ключа? Свяжитесь с нами:",
         "btn_admin": "👨‍💻 Администратор",
         "btn_owner": "👑 Владелец",
         "btn_buy": "🛒 Купить / Ключ",
         "btn_back": "⬅️ Назад",
         "anim_loading": "⚡ [■□□□□] Подключение к серверу...",
-        "anim_loading2": "⚡ [■■■□□] Авторизация сессии...",
         "anim_loading3": "⚡ [■■■■■] Расшифровка файла...",
-        "anim_vap": "✨ Очистка интерфейса...",
     }
 }
 
@@ -168,10 +188,11 @@ def main_dashboard_keyboard(lang: str):
         [InlineKeyboardButton(text=t["cat_main"], callback_data="cat_main_id")],
         [InlineKeyboardButton(text=t["cat_second"], callback_data="cat_second_id")],
         [InlineKeyboardButton(text=t["cat_free"], callback_data="cat_free_panel")],
+        [InlineKeyboardButton(text=t["cat_updates"], callback_data="cat_updates")],
         [InlineKeyboardButton(text=t["cat_support"], callback_data="cat_support")]
     ])
 
-# ----------------- USER FLOW -----------------
+# ----------------- USER WORKFLOW -----------------
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer(
@@ -308,6 +329,23 @@ async def display_item(callback: types.CallbackQuery):
     if not sent:
         await bot.send_message(callback.from_user.id, text=full_caption, reply_markup=kb)
 
+@dp.callback_query(F.data == "cat_updates")
+async def show_updates(callback: types.CallbackQuery):
+    lang = await get_user_lang(callback.from_user.id)
+    async with aiosqlite.connect(DB_FILE) as db:
+        async with db.execute("SELECT title, url FROM update_links") as cursor:
+            links = await cursor.fetchall()
+
+    buttons = []
+    for l in links:
+        link_url = l[1]
+        if not (link_url.startswith("http://") or link_url.startswith("https://")):
+            link_url = "https://" + link_url.lstrip("@")
+        buttons.append([InlineKeyboardButton(text=l[0], url=link_url)])
+    
+    buttons.append([InlineKeyboardButton(text=TEXTS[lang]["btn_back"], callback_data="back_to_menu")])
+    await callback.message.edit_text(TEXTS[lang]["updates_title"], reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
 @dp.callback_query(F.data == "cat_support")
 async def show_support(callback: types.CallbackQuery):
     lang = await get_user_lang(callback.from_user.id)
@@ -326,7 +364,7 @@ async def back_to_menu(callback: types.CallbackQuery):
     lang = await get_user_lang(callback.from_user.id)
     await callback.message.edit_text(TEXTS[lang]["menu_title"], reply_markup=main_dashboard_keyboard(lang))
 
-# ----------------- ADMIN PANEL -----------------
+# ----------------- ADMIN STATES & DASHBOARD -----------------
 class AdminAddProduct(StatesGroup):
     category = State()
     title = State()
@@ -341,10 +379,19 @@ class AdminSetHandle(StatesGroup):
 class AdminBroadcast(StatesGroup):
     text = State()
 
+class AdminAddLink(StatesGroup):
+    title = State()
+    url = State()
+
+class AdminEditLinkUrl(StatesGroup):
+    link_id = State()
+    new_url = State()
+
 def admin_dashboard_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Add Product/Panel", callback_data="admin_add_prod")],
         [InlineKeyboardButton(text="🗑️ Delete Product", callback_data="admin_del_prod")],
+        [InlineKeyboardButton(text="🔗 Manage Update Links", callback_data="admin_manage_links")],
         [InlineKeyboardButton(text="👥 View User Logs", callback_data="admin_users")],
         [InlineKeyboardButton(text="⚙️ Edit Owner/Admin Handles", callback_data="admin_handles")],
         [InlineKeyboardButton(text="📢 Broadcast Message", callback_data="admin_broadcast")]
@@ -362,6 +409,78 @@ async def cmd_admin(message: types.Message):
     else:
         await message.answer(f"⛔ Access Denied! Your ID: `{user_id}`")
 
+# ----------------- ADMIN UPDATE LINKS MANAGEMENT -----------------
+@dp.callback_query(F.data == "admin_manage_links")
+async def admin_manage_links(callback: types.CallbackQuery):
+    if callback.from_user.id not in ADMIN_IDS and str(callback.from_user.id) != "8886164132":
+        return
+    async with aiosqlite.connect(DB_FILE) as db:
+        async with db.execute("SELECT id, title, url FROM update_links") as cursor:
+            links = await cursor.fetchall()
+
+    buttons = []
+    for l in links:
+        buttons.append([
+            InlineKeyboardButton(text=f"✏️ {l[1]}", callback_data=f"editlink_{l[0]}"),
+            InlineKeyboardButton(text="❌", callback_data=f"dellink_{l[0]}")
+        ])
+    buttons.append([InlineKeyboardButton(text="➕ Add New Channel/Proof Link", callback_data="admin_add_link")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Back", callback_data="admin_home")])
+
+    await callback.message.edit_text(
+        "🔗 **MANAGE UPDATE & PROOF CHANNELS**\nTap on a title to edit its link, or tap ❌ to delete:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
+        parse_mode="Markdown"
+    )
+
+@dp.callback_query(F.data.startswith("editlink_"))
+async def edit_link_url_start(callback: types.CallbackQuery, state: FSMContext):
+    link_id = int(callback.data.split("_")[1])
+    await state.update_data(link_id=link_id)
+    await state.set_state(AdminEditLinkUrl.new_url)
+    await callback.message.answer("Send the new URL for this button (e.g. `https://t.me/yourchannel`):")
+
+@dp.message(AdminEditLinkUrl.new_url)
+async def edit_link_url_save(message: types.Message, state: FSMContext):
+    url = message.text.strip()
+    data = await state.get_data()
+    async with aiosqlite.connect(DB_FILE) as db:
+        await db.execute("UPDATE update_links SET url = ? WHERE id = ?", (url, data["link_id"]))
+        await db.commit()
+    await state.clear()
+    await message.answer("✅ Channel link successfully updated!", reply_markup=admin_dashboard_kb())
+
+@dp.callback_query(F.data.startswith("dellink_"))
+async def del_link_item(callback: types.CallbackQuery):
+    link_id = int(callback.data.split("_")[1])
+    async with aiosqlite.connect(DB_FILE) as db:
+        await db.execute("DELETE FROM update_links WHERE id = ?", (link_id,))
+        await db.commit()
+    await callback.answer("Link deleted!", show_alert=True)
+    await admin_manage_links(callback)
+
+@dp.callback_query(F.data == "admin_add_link")
+async def add_link_start(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(AdminAddLink.title)
+    await callback.message.answer("Enter button name (e.g. `📢 VIP Updates Channel`):")
+
+@dp.message(AdminAddLink.title)
+async def add_link_title(message: types.Message, state: FSMContext):
+    await state.update_data(title=message.text.strip())
+    await state.set_state(AdminAddLink.url)
+    await message.answer("Enter target link URL (e.g. `https://t.me/yourchannel`):")
+
+@dp.message(AdminAddLink.url)
+async def add_link_url(message: types.Message, state: FSMContext):
+    url = message.text.strip()
+    data = await state.get_data()
+    async with aiosqlite.connect(DB_FILE) as db:
+        await db.execute("INSERT INTO update_links (title, url) VALUES (?, ?)", (data["title"], url))
+        await db.commit()
+    await state.clear()
+    await message.answer(f"✅ Added **{data['title']}** to Get Updates!", reply_markup=admin_dashboard_kb(), parse_mode="Markdown")
+
+# ----------------- ADMIN PRODUCT MANAGEMENT -----------------
 @dp.callback_query(F.data == "admin_handles")
 async def admin_set_handles_prompt(callback: types.CallbackQuery):
     if callback.from_user.id not in ADMIN_IDS and str(callback.from_user.id) != "8886164132":
@@ -390,6 +509,7 @@ async def save_handle(message: types.Message, state: FSMContext):
     await set_setting(role, handle)
     await state.clear()
     await message.answer(f"✅ Success! `{role}` updated to {handle}")
+
 @dp.callback_query(F.data == "admin_users")
 async def show_user_logs(callback: types.CallbackQuery):
     await callback.answer()
@@ -416,7 +536,6 @@ async def show_user_logs(callback: types.CallbackQuery):
         await callback.message.edit_text(text, reply_markup=kb)
     except Exception:
         await callback.message.answer(text, reply_markup=kb)
-
 
 @dp.callback_query(F.data == "admin_add_prod")
 async def add_prod_start(callback: types.CallbackQuery, state: FSMContext):
