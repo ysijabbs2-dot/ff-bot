@@ -390,9 +390,9 @@ async def save_handle(message: types.Message, state: FSMContext):
     await set_setting(role, handle)
     await state.clear()
     await message.answer(f"✅ Success! `{role}` updated to {handle}")
-
 @dp.callback_query(F.data == "admin_users")
 async def show_user_logs(callback: types.CallbackQuery):
+    await callback.answer()
     if callback.from_user.id not in ADMIN_IDS and str(callback.from_user.id) != "8886164132":
         return
     async with aiosqlite.connect(DB_FILE) as db:
@@ -403,12 +403,20 @@ async def show_user_logs(callback: types.CallbackQuery):
         await callback.answer("No users logged yet.", show_alert=True)
         return
 
-    text = f"👥 **TOTAL REGISTERED USERS:** {len(users)}\n\n"
+    text = f"👥 TOTAL REGISTERED USERS: {len(users)}\n\n"
     for u in users[-15:]:
-        text += f"👤 {u[1]} (@{u[2]})\n🆔 `{u[0]}` | 📞 `{u[3] or 'Not Shared'}` | 🌐 `{u[4]}`\n" + "—"*20 + "\n"
+        name = str(u[1] or "Unknown")
+        username = f"@{u[2]}" if u[2] and u[2] != "None" else "No Username"
+        phone = str(u[3] or "Not Shared")
+        lang = str(u[4] or "en")
+        text += f"👤 {name} ({username})\n🆔 ID: {u[0]} | 📞 {phone} | 🌐 {lang}\n" + "—"*20 + "\n"
 
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Back", callback_data="admin_home")]])
-    await callback.message.edit_text(text, reply_markup=kb, parse_mode="Markdown")
+    try:
+        await callback.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await callback.message.answer(text, reply_markup=kb)
+
 
 @dp.callback_query(F.data == "admin_add_prod")
 async def add_prod_start(callback: types.CallbackQuery, state: FSMContext):
