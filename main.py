@@ -14,7 +14,7 @@ from aiogram.types import (
 
 # ----------------- CONFIGURATION -----------------
 BOT_TOKEN = "8910817023:AAHVrNz-QQVibCBpe_1Qeb2mn_9qqR2H6w0"
-ADMIN_IDS = [8886164132, 8910817023]
+ADMIN_IDS = [8886164132]
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
@@ -140,8 +140,6 @@ async def get_user_lang(user_id: int):
 async def run_vaporize_animation(message: types.Message, lang: str):
     t = TEXTS[lang]
     try:
-        await message.edit_text(t["anim_vap"])
-        await asyncio.sleep(0.3)
         await message.edit_text(t["anim_loading"])
         await asyncio.sleep(0.3)
         await message.edit_text(t["anim_loading3"])
@@ -173,13 +171,12 @@ def main_dashboard_keyboard(lang: str):
         [InlineKeyboardButton(text=t["cat_support"], callback_data="cat_support")]
     ])
 
-# ----------------- USER WORKFLOW -----------------
+# ----------------- USER FLOW -----------------
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer(
-        "✨ **Welcome / Swagat / Добро пожаловать!**\n\nChoose language / Bhasha chunein / Выберите язык:",
-        reply_markup=lang_keyboard(),
-        parse_mode="Markdown"
+        "✨ Welcome / Swagat / Добро пожаловать!\n\nChoose language / Bhasha chunein / Выберите язык:",
+        reply_markup=lang_keyboard()
     )
 
 @dp.callback_query(F.data.startswith("lang_"))
@@ -202,18 +199,20 @@ async def set_user_language(callback: types.CallbackQuery):
             row = await cursor.fetchone()
             has_phone = row and row[0]
 
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+
     if not has_phone:
         await callback.message.answer(
             TEXTS[lang_code]["contact_req"],
-            reply_markup=contact_keyboard(lang_code),
-            parse_mode="Markdown"
+            reply_markup=contact_keyboard(lang_code)
         )
     else:
         await callback.message.answer(
             TEXTS[lang_code]["menu_title"],
-            reply_markup=main_dashboard_keyboard(lang_code),
-            parse_mode="Markdown"
+            reply_markup=main_dashboard_keyboard(lang_code)
         )
 
 @dp.message(F.contact)
@@ -227,7 +226,7 @@ async def handle_contact(message: types.Message):
         await db.commit()
 
     await message.answer(TEXTS[lang]["verified"], reply_markup=ReplyKeyboardRemove())
-    await message.answer(TEXTS[lang]["menu_title"], reply_markup=main_dashboard_keyboard(lang), parse_mode="Markdown")
+    await message.answer(TEXTS[lang]["menu_title"], reply_markup=main_dashboard_keyboard(lang))
 
 @dp.callback_query(F.data.in_(["cat_main_id", "cat_second_id", "cat_free_panel"]))
 async def show_category_products(callback: types.CallbackQuery):
@@ -247,8 +246,7 @@ async def show_category_products(callback: types.CallbackQuery):
         ])
         await callback.message.edit_text(
             TEXTS[lang]["empty"].format(owner=owner),
-            reply_markup=kb,
-            parse_mode="Markdown"
+            reply_markup=kb
         )
         return
 
@@ -256,9 +254,8 @@ async def show_category_products(callback: types.CallbackQuery):
     buttons.append([InlineKeyboardButton(text=TEXTS[lang]["btn_back"], callback_data="back_to_menu")])
     
     await callback.message.edit_text(
-        "💎 **Available Options**\nSelect an option to view details:",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
-        parse_mode="Markdown"
+        "💎 Available Options\nSelect an option to view details:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
 @dp.callback_query(F.data.startswith("item_"))
@@ -289,19 +286,27 @@ async def display_item(callback: types.CallbackQuery):
     action_buttons.append([InlineKeyboardButton(text=TEXTS[lang]["btn_back"], callback_data=f"cat_{cat}")])
     kb = InlineKeyboardMarkup(inline_keyboard=action_buttons)
 
-    full_caption = f"🔥 **{title}**\n\n{caption}\n\n"
+    full_caption = f"🔥 {title}\n\n{caption}\n\n"
     if price and price != "None" and cat != "free_panel":
-        full_caption += f"💰 **Price:** `{price}`\n"
+        full_caption += f"💰 Price: {price}\n"
 
-    try:
-        if file_type == "video" and file_id:
-            await bot.send_video(callback.from_user.id, video=file_id, caption=full_caption, reply_markup=kb, parse_mode="Markdown")
-        elif file_type == "document" and file_id:
-            await bot.send_document(callback.from_user.id, document=file_id, caption=full_caption, reply_markup=kb, parse_mode="Markdown")
-        else:
-            await bot.send_message(callback.from_user.id, text=full_caption, reply_markup=kb, parse_mode="Markdown")
-    except Exception:
-        await bot.send_message(callback.from_user.id, text=full_caption, reply_markup=kb, parse_mode="Markdown")
+    sent = False
+    if file_id and file_id != "None":
+        try:
+            if file_type == "video":
+                await bot.send_video(callback.from_user.id, video=file_id, caption=full_caption, reply_markup=kb)
+                sent = True
+            elif file_type == "animation":
+                await bot.send_animation(callback.from_user.id, animation=file_id, caption=full_caption, reply_markup=kb)
+                sent = True
+            elif file_type == "document":
+                await bot.send_document(callback.from_user.id, document=file_id, caption=full_caption, reply_markup=kb)
+                sent = True
+        except Exception:
+            sent = False
+
+    if not sent:
+        await bot.send_message(callback.from_user.id, text=full_caption, reply_markup=kb)
 
 @dp.callback_query(F.data == "cat_support")
 async def show_support(callback: types.CallbackQuery):
@@ -314,12 +319,12 @@ async def show_support(callback: types.CallbackQuery):
         [InlineKeyboardButton(text=TEXTS[lang]["btn_owner"], url=f"https://t.me/{owner}")],
         [InlineKeyboardButton(text=TEXTS[lang]["btn_back"], callback_data="back_to_menu")]
     ])
-    await callback.message.edit_text(TEXTS[lang]["support_title"], reply_markup=kb, parse_mode="Markdown")
+    await callback.message.edit_text(TEXTS[lang]["support_title"], reply_markup=kb)
 
 @dp.callback_query(F.data == "back_to_menu")
 async def back_to_menu(callback: types.CallbackQuery):
     lang = await get_user_lang(callback.from_user.id)
-    await callback.message.edit_text(TEXTS[lang]["menu_title"], reply_markup=main_dashboard_keyboard(lang), parse_mode="Markdown")
+    await callback.message.edit_text(TEXTS[lang]["menu_title"], reply_markup=main_dashboard_keyboard(lang))
 
 # ----------------- ADMIN PANEL -----------------
 class AdminAddProduct(StatesGroup):
@@ -433,6 +438,8 @@ async def add_prod_title(message: types.Message, state: FSMContext):
 async def add_prod_file(message: types.Message, state: FSMContext):
     if message.video:
         await state.update_data(file_id=message.video.file_id, file_type="video")
+    elif message.animation:
+        await state.update_data(file_id=message.animation.file_id, file_type="animation")
     elif message.document:
         await state.update_data(file_id=message.document.file_id, file_type="document")
     else:
@@ -449,7 +456,7 @@ async def add_prod_caption(message: types.Message, state: FSMContext):
         async with aiosqlite.connect(DB_FILE) as db:
             await db.execute(
                 "INSERT INTO products (category, title, file_id, file_type, caption, price) VALUES (?, ?, ?, ?, ?, ?)",
-                (data["category"], data["title"], data["file_id"], data["file_type"], data["caption"], "FREE")
+                (data["category"], data["title"], data.get("file_id"), data.get("file_type"), data["caption"], "FREE")
             )
             await db.commit()
         await state.clear()
@@ -464,11 +471,11 @@ async def add_prod_price(message: types.Message, state: FSMContext):
     async with aiosqlite.connect(DB_FILE) as db:
         await db.execute(
             "INSERT INTO products (category, title, file_id, file_type, caption, price) VALUES (?, ?, ?, ?, ?, ?)",
-            (data["category"], data["title"], data["file_id"], data["file_type"], data["caption"], message.text)
+            (data["category"], data["title"], data.get("file_id"), data.get("file_type"), data["caption"], message.text)
         )
         await db.commit()
     await state.clear()
-    await message.answer("✅ Product uploaded successfully with video and pricing!")
+    await message.answer("✅ Product uploaded successfully with media and pricing!")
 
 @dp.callback_query(F.data == "admin_del_prod")
 async def del_prod_list(callback: types.CallbackQuery):
