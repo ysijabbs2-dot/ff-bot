@@ -14,7 +14,7 @@ from aiogram.types import (
 
 # ----------------- CONFIGURATION -----------------
 BOT_TOKEN = "8910817023:AAHVrNz-QQVibCBpe_1Qeb2mn_9qqR2H6w0"
-ADMIN_IDS = [8886164132]
+ADMIN_IDS = [8886164132, 8910817023]
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
@@ -173,7 +173,7 @@ def main_dashboard_keyboard(lang: str):
         [InlineKeyboardButton(text=t["cat_support"], callback_data="cat_support")]
     ])
 
-# ----------------- USER HANDLERS -----------------
+# ----------------- USER WORKFLOW -----------------
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer(
@@ -302,7 +302,6 @@ async def display_item(callback: types.CallbackQuery):
             await bot.send_message(callback.from_user.id, text=full_caption, reply_markup=kb, parse_mode="Markdown")
     except Exception:
         await bot.send_message(callback.from_user.id, text=full_caption, reply_markup=kb, parse_mode="Markdown")
-id, text=full_caption, reply_markup=kb, parse_mode="Markdown")
 
 @dp.callback_query(F.data == "cat_support")
 async def show_support(callback: types.CallbackQuery):
@@ -348,13 +347,19 @@ def admin_dashboard_kb():
 
 @dp.message(Command("admin"))
 async def cmd_admin(message: types.Message):
-    if message.from_user.id not in ADMIN_IDS:
-        return
-    await message.answer("🛠️ **SUPER ADMIN CONTROL PANEL**\nManage entire bot operations:", reply_markup=admin_dashboard_kb(), parse_mode="Markdown")
+    user_id = message.from_user.id
+    if user_id in ADMIN_IDS or str(user_id) == "8886164132":
+        await message.answer(
+            f"🛠️ **SUPER ADMIN CONTROL PANEL**\nWelcome Boss! (ID: `{user_id}`)\nManage entire bot operations:",
+            reply_markup=admin_dashboard_kb(),
+            parse_mode="Markdown"
+        )
+    else:
+        await message.answer(f"⛔ Access Denied! Your ID: `{user_id}`")
 
 @dp.callback_query(F.data == "admin_handles")
 async def admin_set_handles_prompt(callback: types.CallbackQuery):
-    if callback.from_user.id not in ADMIN_IDS:
+    if callback.from_user.id not in ADMIN_IDS and str(callback.from_user.id) != "8886164132":
         return
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="👑 Set Owner Handle", callback_data="set_handle_owner")],
@@ -383,7 +388,7 @@ async def save_handle(message: types.Message, state: FSMContext):
 
 @dp.callback_query(F.data == "admin_users")
 async def show_user_logs(callback: types.CallbackQuery):
-    if callback.from_user.id not in ADMIN_IDS:
+    if callback.from_user.id not in ADMIN_IDS and str(callback.from_user.id) != "8886164132":
         return
     async with aiosqlite.connect(DB_FILE) as db:
         async with db.execute("SELECT user_id, name, username, phone, lang FROM users") as cursor:
@@ -402,7 +407,7 @@ async def show_user_logs(callback: types.CallbackQuery):
 
 @dp.callback_query(F.data == "admin_add_prod")
 async def add_prod_start(callback: types.CallbackQuery, state: FSMContext):
-    if callback.from_user.id not in ADMIN_IDS:
+    if callback.from_user.id not in ADMIN_IDS and str(callback.from_user.id) != "8886164132":
         return
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Main ID", callback_data="addcat_main_id")],
@@ -467,7 +472,7 @@ async def add_prod_price(message: types.Message, state: FSMContext):
 
 @dp.callback_query(F.data == "admin_del_prod")
 async def del_prod_list(callback: types.CallbackQuery):
-    if callback.from_user.id not in ADMIN_IDS:
+    if callback.from_user.id not in ADMIN_IDS and str(callback.from_user.id) != "8886164132":
         return
     async with aiosqlite.connect(DB_FILE) as db:
         async with db.execute("SELECT id, title, category FROM products") as cursor:
@@ -491,7 +496,7 @@ async def del_prod_confirm(callback: types.CallbackQuery):
 
 @dp.callback_query(F.data == "admin_broadcast")
 async def start_broadcast(callback: types.CallbackQuery, state: FSMContext):
-    if callback.from_user.id not in ADMIN_IDS:
+    if callback.from_user.id not in ADMIN_IDS and str(callback.from_user.id) != "8886164132":
         return
     await state.set_state(AdminBroadcast.text)
     await callback.message.answer("Enter broadcast message to send to ALL users:")
