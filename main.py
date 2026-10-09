@@ -278,8 +278,10 @@ async def display_item(callback: types.CallbackQuery):
     owner = await get_setting("owner")
     clean_owner = owner.replace("@", "")
 
-    await run_vaporize_animation(callback.message, lang)
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
 
     action_buttons = []
     if cat != "free_panel":
@@ -291,12 +293,16 @@ async def display_item(callback: types.CallbackQuery):
     if price and price != "None" and cat != "free_panel":
         full_caption += f"💰 **Price:** `{price}`\n"
 
-    if file_type == "video":
-        await bot.send_video(callback.from_user.id, video=file_id, caption=full_caption, reply_markup=kb, parse_mode="Markdown")
-    elif file_type == "document":
-        await bot.send_document(callback.from_user.id, document=file_id, caption=full_caption, reply_markup=kb, parse_mode="Markdown")
-    else:
+    try:
+        if file_type == "video" and file_id:
+            await bot.send_video(callback.from_user.id, video=file_id, caption=full_caption, reply_markup=kb, parse_mode="Markdown")
+        elif file_type == "document" and file_id:
+            await bot.send_document(callback.from_user.id, document=file_id, caption=full_caption, reply_markup=kb, parse_mode="Markdown")
+        else:
+            await bot.send_message(callback.from_user.id, text=full_caption, reply_markup=kb, parse_mode="Markdown")
+    except Exception:
         await bot.send_message(callback.from_user.id, text=full_caption, reply_markup=kb, parse_mode="Markdown")
+id, text=full_caption, reply_markup=kb, parse_mode="Markdown")
 
 @dp.callback_query(F.data == "cat_support")
 async def show_support(callback: types.CallbackQuery):
